@@ -1,16 +1,15 @@
 import 'dotenv/config';
-import { defineConfig } from 'prisma/config';
 
-export default defineConfig({
+const config = {
   schema: 'prisma/schema.prisma',
   migrate: {
     async adapter() {
-      const { PrismaLibSQL } = await import('@prisma/adapter-libsql');
-      const { createClient } = await import('@libsql/client');
-      const client = createClient({
+      const { PrismaLibSql } = await import('@prisma/adapter-libsql');
+      return new PrismaLibSql({
         url: process.env.DATABASE_URL!,
       });
-      return new PrismaLibSQL(client);
     },
   },
-});
+};
+
+export default config;
