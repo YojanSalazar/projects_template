@@ -1,0 +1,79 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// Representa a un negocio en la plataforma (El Dueño/Tenant)
+model Business {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique // ejemplo: "demo-barbershop" (usado en la URL)
+  phone       String?   // Para el WhatsApp del dueño (si se notifica)
+  address     String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  services    Service[] // Servicios que ofrece este negocio
+  bookings    Booking[] // Citas registradas en este negocio
+}
+
+// Representa los servicios que ofrece un negocio (ej. "Corte de cabello")
+model Service {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  duration    Int      // Duración en minutos
+  
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  
+  bookings    Booking[] // Citas usando este servicio
+}
+
+// Representa la cita que crea el cliente final
+model Booking {
+  id              String   @id @default(cuid())
+  
+  // Datos del Cliente (Usuario final)
+  clientName      String
+  clientPhone     String   // Número de WhatsApp del cliente
+  
+  // Fechas de la cita
+  startTime       DateTime
+  endTime         DateTime
+  
+  // Relaciones
+  businessId      String
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  
+  serviceId       String
+  service         Service  @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+
+  status          String   @default("PENDING") // PENDING, CONFIRMED, CANCELLED, COMPLETED
+  
+  notifications   Notification[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Registra cada notificación enviada por WhatsApp
+model Notification {
+  id         String   @id @default(cuid())
+  type       String   // CONFIRMATION, REMINDER, CANCELLATION, CUSTOM
+  channel    String   @default("WHATSAPP")
+  status     String   @default("PENDING") // PENDING, SENT, FAILED
+  message    String
+  
+  bookingId  String
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  
+  createdAt  DateTime @default(now())
+}
